@@ -233,6 +233,21 @@
       color: #111827;
     }
 
+    .section-title {
+      margin-top: 20px;
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0b3954;
+    }
+
+    .section-subtitle {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
     .legend {
       font-size: 11px;
       color: #4b5563;
@@ -297,6 +312,12 @@
       <span id="monthsInfo"></span>
     </div>
 
+    <!-- Hoofdresultaten-tabel -->
+    <h3 class="section-title">Overzicht ABC-analyse per SKU</h3>
+    <p class="section-subtitle">
+      Alle SKU’s binnen de huidige selectie (filter &amp; zoekopdracht). Kolommen zijn sorteerbaar.
+    </p>
+
     <div class="table-scroll-outer">
       <div id="tableScrollTop" class="table-scroll-top">
         <div class="table-scroll-inner"></div>
@@ -327,7 +348,7 @@
     </div>
 
     <p class="legend">
-      <strong>Legenda:</strong><br />
+      <strong>Legenda hoofdtafel:</strong><br />
       A = SKU’s die samen de eerste 80% van de omzet vormen binnen de gekozen scope
       (alle producten of alleen het gefilterde producttype).<br />
       B = volgende 15% van de omzet (tot 95%).<br />
@@ -336,6 +357,51 @@
       Een <code>-</code> betekent dat de SKU die maand niet is meegenomen in de ABC-analyse
       (bijvoorbeeld omdat de startvoorraad 0 was).<br />
       <strong>Voorraad aanwezig:</strong> Ja = eindvoorraad meest recente maand &gt; 0, Nee = eindvoorraad meest recente maand = 0.
+    </p>
+
+    <!-- Advies-tabel voor bij te bestellen producten -->
+    <h3 class="section-title">Advies: bij te bestellen producten (top 20)</h3>
+    <p class="section-subtitle">
+      SKU’s binnen de huidige selectie waarbij geen voorraad meer is in de meest recente maand
+      of minder dan 1 maand voorspelde voorraad (&lt; 30 dagen). Gerangschikt op lage ABC-score
+      (1=A), veel maanden op voorraad, hoge verkopen en een sterk A-dominant ABC-beloop
+      (recente maanden zwaarder meegewogen; laatste maand op voorraad weegt minder sterk).
+    </p>
+
+    <div class="table-wrapper" id="restockWrapper">
+      <table id="restockTable">
+        <thead>
+          <tr>
+            <th>Productnaam</th>
+            <th>SKU</th>
+            <th>Producttype</th>
+            <th>Voorraad aanwezig</th>
+            <th>Verwachte dagen voorraad</th>
+            <th>Totaal verkopen</th>
+            <th>Gem. verkopen / maand</th>
+            <th>Gem. ABC-score (1=A)</th>
+            <th>Maanden op voorraad</th>
+            <th>ABC-beloop over maanden</th>
+          </tr>
+        </thead>
+        <tbody id="restockBody">
+          <tr>
+            <td colspan="10">Nog geen advies beschikbaar. Upload een Excel-bestand om suggesties te zien.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="legend">
+      <strong>Legenda adviestafel:</strong><br />
+      Een SKU komt in deze lijst als:
+      <ul style="margin: 4px 0 0 16px; padding-left: 12px; font-size: 11px; color:#4b5563;">
+        <li>de eindvoorraad in de chronologisch meest recente maand 0 is (geen voorraad), of</li>
+        <li>de voorspelde voorraad minder dan 30 dagen is (op basis van gemiddelde maandverkoop).</li>
+      </ul>
+      Binnen deze set wordt gerangschikt op:
+      lage gemiddelde ABC-score (1=A), veel maanden met data/voorraad, hoge verkopen
+      (totaal en gemiddeld), en een ABC-beloop met veel A-scores in recentere maanden.
     </p>
   </div>
 
@@ -347,7 +413,8 @@
         sortColumn: 'productTitle',
         sortDirection: 'asc',
         searchTerm: '',
-        analysisRows: []
+        analysisRows: [],
+        restockRows: []
       };
 
       const fileInput = document.getElementById('excelFileInput');
@@ -362,6 +429,8 @@
       const tableWrapperEl = document.getElementById('tableWrapper');
       const tableScrollTopEl = document.getElementById('tableScrollTop');
       const tableScrollInnerEl = tableScrollTopEl.querySelector('.table-scroll-inner');
+
+      const restockBodyEl = document.getElementById('restockBody');
 
       function setStatus(message) {
         statusMessageEl.textContent = message || '';
@@ -523,8 +592,11 @@
         filtersEl.classList.remove('hidden');
 
         // eerste analyse: geen filter (alle SKU's)
-        state.analysisRows = performAnalysis(null);
+        const result = performAnalysis(null);
+        state.analysisRows = result.analysisRows;
+        state.restockRows = result.restockRows;
         updateTable();
+        updateRestockTable();
       }
 
       /**
@@ -532,10 +604,12 @@
        * - Als filterProductType == null: alle producten.
        * - Als filterProductType is gezet: alleen producten binnen dat type,
        *   en de totale omzet wordt ook alleen over dit type berekend.
+       * Retourneert:
+       *   { analysisRows: [...], restockRows: [...] }
        */
       function performAnalysis(filterProductType) {
         const months = state.monthlyData;
-        if (!months || months.length === 0) return [];
+        if (!months || months.length === 0) return { analysisRows: [], restockRows: [] };
 
         const monthKeys = months.map(m => m.key);
         const skuInfos = new Map();
@@ -543,7 +617,6 @@
         // 1e pass: totalen per SKU (totaal, per maand, eindvoorraad per maand)
         months.forEach(month => {
           month.entries.forEach(entry => {
-            // Alleen entries binnen het gefilterde producttype meenemen
             if (filterProductType && entry.productType !== filterProductType) return;
 
             const sku = entry.sku;
@@ -583,7 +656,6 @@
 
         // 2e pass: ABC per maand (op basis van omzet in die maand)
         months.forEach(month => {
-          // Alleen kijken naar entries van gefilterd producttype (of alles)
           const aggregation = new Map(); // sku -> { startingInv, revenue }
 
           month.entries.forEach(entry => {
@@ -608,7 +680,6 @@
 
           const candidates = [];
           aggregation.forEach((agg, sku) => {
-            // SKU alleen meenemen als startvoorraad > 0 in deze maand
             if (agg.startingInv > 0) {
               candidates.push({ sku, revenue: agg.revenue });
             }
@@ -621,7 +692,6 @@
           let totalRevenue = candidates.reduce((sum, c) => sum + c.revenue, 0);
 
           if (totalRevenue <= 0) {
-            // als alle omzet 0 is: alles C binnen deze scope
             candidates.forEach(c => {
               const info = skuInfos.get(c.sku);
               if (info) {
@@ -631,7 +701,6 @@
             return;
           }
 
-          // sorteren op omzet binnen de (gefilterde) scope
           candidates.sort((a, b) => b.revenue - a.revenue);
 
           let cumulative = 0;
@@ -656,8 +725,9 @@
         });
 
         const rows = [];
+        const restockCandidates = [];
 
-        // 3e pass: KPI's per SKU
+        // 3e pass: KPI's per SKU + restock-candidates
         skuInfos.forEach(info => {
           const avgUnitsPerMonth = monthCount > 0 ? info.totalUnits / monthCount : 0;
 
@@ -670,6 +740,16 @@
               break;
             }
           }
+
+          // aantal maanden "op voorraad" (endingInv > 0 of verkopen in die maand)
+          let monthsInStock = 0;
+          monthKeys.forEach(key => {
+            const endInv = info.monthlyEndingInv[key];
+            const units = info.monthlyUnits[key] || 0;
+            if ((endInv != null && endInv > 0) || units > 0) {
+              monthsInStock++;
+            }
+          });
 
           let daysOfStock = null;
           if (latestEndingInv != null && avgUnitsPerMonth > 0) {
@@ -698,7 +778,29 @@
             avgAbcScore = sum / scores.length;
           }
 
-          rows.push({
+          // ABC-patroonscore: recente maanden zwaarder, laatste maand op voorraad wat minder zwaar
+          let patternScore = 0;
+          let lastIdx = -1;
+          for (let i = 0; i < abcLetters.length; i++) {
+            if (abcLetters[i] !== '-') {
+              lastIdx = i;
+            }
+          }
+          for (let i = 0; i < abcLetters.length; i++) {
+            const cat = abcLetters[i];
+            if (cat === 'A' || cat === 'B' || cat === 'C') {
+              const catValue = cat === 'A' ? 3 : cat === 'B' ? 2 : 1;
+              let baseWeight = i + 1; // latere maanden iets zwaarder
+              if (i === lastIdx) {
+                baseWeight = baseWeight * 0.5; // laatste maand op voorraad weegt minder sterk
+              } else if (i >= abcLetters.length - 3) {
+                baseWeight = baseWeight * 1.5; // andere recente maanden zwaarder
+              }
+              patternScore += catValue * baseWeight;
+            }
+          }
+
+          const row = {
             productTitle: info.productTitle,
             sku: info.sku,
             productType: info.productType || '',
@@ -707,11 +809,55 @@
             daysOfStock,
             stockAvailable,
             avgAbcScore,
-            abcTimeline: abcLetters.join('')
-          });
+            abcTimeline: abcLetters.join(''),
+            monthsInStock,
+            patternScore
+          };
+
+          rows.push(row);
+
+          // Restock criteria:
+          // - voorraad op laatste maand = Nee OF minder dan 30 dagen voorraad
+          // - én er zijn verkopen / ABC-informatie
+          const hasSales = avgUnitsPerMonth > 0 || info.totalUnits > 0;
+          const hasAbcInfo = avgAbcScore != null;
+
+          const lowStock = (daysOfStock != null && daysOfStock < 30);
+          const noStock = (stockAvailable === 'Nee');
+
+          if (hasSales && hasAbcInfo && (noStock || lowStock)) {
+            restockCandidates.push(row);
+          }
         });
 
-        return rows;
+        // Restock-kandidaten sorteren op:
+        // 1) Lage gemiddelde ABC-score (asc)
+        // 2) Hoge patternScore (desc)
+        // 3) Meer maanden op voorraad (desc)
+        // 4) Totaal verkopen (desc)
+        // 5) Gem. verkopen per maand (desc)
+        restockCandidates.sort((a, b) => {
+          if (a.avgAbcScore != null && b.avgAbcScore != null && a.avgAbcScore !== b.avgAbcScore) {
+            return a.avgAbcScore - b.avgAbcScore;
+          }
+          if (a.patternScore !== b.patternScore) {
+            return b.patternScore - a.patternScore;
+          }
+          if (a.monthsInStock !== b.monthsInStock) {
+            return b.monthsInStock - a.monthsInStock;
+          }
+          if (a.totalUnits !== b.totalUnits) {
+            return b.totalUnits - a.totalUnits;
+          }
+          if (a.avgUnitsPerMonth !== b.avgUnitsPerMonth) {
+            return b.avgUnitsPerMonth - a.avgUnitsPerMonth;
+          }
+          return String(a.productTitle).localeCompare(String(b.productTitle), 'nl-NL');
+        });
+
+        const top20Restock = restockCandidates.slice(0, 20);
+
+        return { analysisRows: rows, restockRows: top20Restock };
       }
 
       function syncTopScrollWidth() {
@@ -820,6 +966,77 @@
         syncTopScrollWidth();
       }
 
+      function updateRestockTable() {
+        const tbody = restockBodyEl;
+        tbody.innerHTML = '';
+
+        let rows = state.restockRows.slice();
+
+        const search = state.searchTerm.trim().toLowerCase();
+        if (search) {
+          rows = rows.filter(r =>
+            (r.productTitle && r.productTitle.toLowerCase().includes(search)) ||
+            (r.sku && r.sku.toLowerCase().includes(search))
+          );
+        }
+
+        if (rows.length === 0) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 10;
+          td.textContent = 'Geen bij te bestellen producten binnen de huidige selectie.';
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+          return;
+        }
+
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+
+          const tdTitle = document.createElement('td');
+          tdTitle.textContent = r.productTitle || '';
+          tr.appendChild(tdTitle);
+
+          const tdSku = document.createElement('td');
+          tdSku.textContent = r.sku || '';
+          tr.appendChild(tdSku);
+
+          const tdType = document.createElement('td');
+          tdType.textContent = r.productType || '';
+          tr.appendChild(tdType);
+
+          const tdStock = document.createElement('td');
+          tdStock.textContent = r.stockAvailable || 'Nee';
+          tr.appendChild(tdStock);
+
+          const tdDays = document.createElement('td');
+          tdDays.textContent = r.daysOfStock != null ? formatNumber(r.daysOfStock, 1) : '—';
+          tr.appendChild(tdDays);
+
+          const tdTotal = document.createElement('td');
+          tdTotal.textContent = formatNumber(r.totalUnits, 0);
+          tr.appendChild(tdTotal);
+
+          const tdAvg = document.createElement('td');
+          tdAvg.textContent = formatNumber(r.avgUnitsPerMonth, 2);
+          tr.appendChild(tdAvg);
+
+          const tdScore = document.createElement('td');
+          tdScore.textContent = r.avgAbcScore != null ? formatNumber(r.avgAbcScore, 2) : '—';
+          tr.appendChild(tdScore);
+
+          const tdMonths = document.createElement('td');
+          tdMonths.textContent = r.monthsInStock != null ? formatNumber(r.monthsInStock, 0) : '0';
+          tr.appendChild(tdMonths);
+
+          const tdTimeline = document.createElement('td');
+          tdTimeline.textContent = r.abcTimeline || '';
+          tr.appendChild(tdTimeline);
+
+          tbody.appendChild(tr);
+        });
+      }
+
       // events
 
       fileInput.addEventListener('change', function (e) {
@@ -844,16 +1061,20 @@
 
       productTypeFilterEl.addEventListener('change', function () {
         const filterType = this.value || null;
-        state.analysisRows = performAnalysis(filterType);
+        const result = performAnalysis(filterType);
+        state.analysisRows = result.analysisRows;
+        state.restockRows = result.restockRows;
         updateTable();
+        updateRestockTable();
       });
 
       searchInputEl.addEventListener('input', function () {
         state.searchTerm = this.value || '';
         updateTable();
+        updateRestockTable();
       });
 
-      // Sorteren bij klikken op table headers
+      // Sorteren bij klikken op table headers (alleen hoofdtafel)
       const headerCells = resultsTableEl.querySelectorAll('thead th');
       headerCells.forEach(th => {
         th.addEventListener('click', function () {
