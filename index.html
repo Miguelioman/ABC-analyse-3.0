@@ -178,7 +178,8 @@
     <h1>ABC-analyse Shopify</h1>
     <p class="subtitle">
       Upload een Excel-export met maand-sheets. De tool maakt automatisch een ABC-analyse over alle SKU’s,
-      met optie om per producttype te filteren.
+      met optie om per producttype te filteren. Als je een producttype filtert, worden zowel de omzet als de
+      ABC-indeling alléén binnen dat producttype berekend.
     </p>
 
     <div class="controls">
@@ -232,7 +233,8 @@
 
     <p class="legend">
       <strong>Legenda:</strong><br />
-      A = SKU’s die samen de eerste 80% van de omzet vormen.<br />
+      A = SKU’s die samen de eerste 80% van de omzet vormen binnen de gekozen scope
+      (alle producten of alleen het gefilterde producttype).<br />
       B = volgende 15% van de omzet (tot 95%).<br />
       C = laatste 5% van de omzet.<br />
       Het ABC-beloop toont de classificatie per maand in chronologische volgorde (bijv. <code>AABBC</code>).<br />
@@ -302,7 +304,7 @@
       function parseMonthLabel(label) {
         if (!label) return null;
         const str = String(label);
-        const parts = str.split(/[-\/]/);
+        const parts = str.split(/[-\\/]/);
         if (parts.length === 2) {
           const m = parseInt(parts[0], 10);
           const y = parseInt(parts[1], 10);
@@ -426,6 +428,12 @@
         updateTable();
       }
 
+      /**
+       * Voert de ABC-analyse uit.
+       * - Als filterProductType == null: alle producten.
+       * - Als filterProductType is gezet: alleen producten binnen dat type,
+       *   en de totale omzet wordt ook alleen over dit type berekend.
+       */
       function performAnalysis(filterProductType) {
         const months = state.monthlyData;
         if (!months || months.length === 0) return [];
@@ -436,6 +444,7 @@
         // 1e pass: totalen per SKU (totaal, per maand, eindvoorraad per maand)
         months.forEach(month => {
           month.entries.forEach(entry => {
+            // Alleen entries binnen het gefilterde producttype meenemen
             if (filterProductType && entry.productType !== filterProductType) return;
 
             const sku = entry.sku;
@@ -455,10 +464,9 @@
               if (entry.productTitle) {
                 info.productTitle = entry.productTitle;
               }
-            }
-
-            if (entry.productType) {
-              info.productType = entry.productType;
+              if (entry.productType) {
+                info.productType = entry.productType;
+              }
             }
 
             const units = Number(entry.unitsSold) || 0;
@@ -472,8 +480,11 @@
           });
         });
 
+        const monthCount = monthKeys.length;
+
         // 2e pass: ABC per maand (op basis van omzet in die maand)
         months.forEach(month => {
+          // Alleen kijken naar entries van gefilterd producttype (of alles)
           const aggregation = new Map(); // sku -> { startingInv, revenue }
 
           month.entries.forEach(entry => {
@@ -511,7 +522,7 @@
           let totalRevenue = candidates.reduce((sum, c) => sum + c.revenue, 0);
 
           if (totalRevenue <= 0) {
-            // als alle omzet 0 is: alles C
+            // als alle omzet 0 is: alles C binnen deze scope
             candidates.forEach(c => {
               const info = skuInfos.get(c.sku);
               if (info) {
@@ -521,6 +532,7 @@
             return;
           }
 
+          // sorteren op omzet binnen de (gefilterde) scope
           candidates.sort((a, b) => b.revenue - a.revenue);
 
           let cumulative = 0;
@@ -544,16 +556,15 @@
           });
         });
 
-        const monthsCount = monthKeys.length;
         const rows = [];
 
         // 3e pass: KPI's per SKU
         skuInfos.forEach(info => {
-          const avgUnitsPerMonth = monthsCount > 0 ? info.totalUnits / monthsCount : 0;
+          const avgUnitsPerMonth = monthCount > 0 ? info.totalUnits / monthCount : 0;
 
           // eindvoorraad van chronologisch meest recente maand
           let latestEndingInv = null;
-          for (let i = monthsCount - 1; i >= 0; i--) {
+          for (let i = monthCount - 1; i >= 0; i--) {
             const key = monthKeys[i];
             if (Object.prototype.hasOwnProperty.call(info.monthlyEndingInv, key)) {
               latestEndingInv = info.monthlyEndingInv[key];
