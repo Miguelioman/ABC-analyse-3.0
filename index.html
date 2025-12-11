@@ -15,105 +15,181 @@
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f5f7;
+      background: #0b1220;
       margin: 0;
       padding: 0;
-      color: #222;
+      color: #111827;
+    }
+
+    .page-header {
+      background: linear-gradient(90deg, #0b3954, #1f6feb);
+      color: #e5efff;
+      padding: 16px 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .page-header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      opacity: 0.9;
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1300px;
       margin: 20px auto 40px;
-      padding: 20px 24px 32px;
+      padding: 20px 24px 28px;
       background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-    }
-
-    h1 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 24px;
+      border-radius: 18px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.25);
+      border: 1px solid #e5e7eb;
     }
 
     .subtitle {
       margin-top: 0;
       margin-bottom: 20px;
-      font-size: 14px;
-      color: #666;
+      font-size: 13px;
+      color: #4b5563;
     }
 
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px 20px;
+      gap: 10px 18px;
       align-items: center;
       margin-bottom: 16px;
     }
 
     .controls label {
-      font-size: 14px;
+      font-size: 13px;
       display: flex;
       flex-direction: column;
       gap: 4px;
+      color: #111827;
     }
 
     input[type="file"],
     select,
     input[type="text"] {
-      font-size: 14px;
+      font-size: 13px;
       padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      border-radius: 999px;
+      border: 1px solid #cbd5f5;
       min-width: 220px;
+      background: #f9fafb;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
     }
 
     input[type="text"] {
       min-width: 260px;
     }
 
+    input[type="file"]:focus,
+    select:focus,
+    input[type="text"]:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+      background: #ffffff;
+    }
+
     #statusMessage {
-      font-size: 13px;
-      color: #555;
+      font-size: 12px;
+      color: #374151;
     }
 
     .info {
-      font-size: 13px;
-      margin-bottom: 10px;
-      color: #444;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #4b5563;
     }
 
     .info strong {
       font-weight: 600;
+      color: #111827;
     }
 
     .hidden {
       display: none;
     }
 
-    .table-wrapper {
-      margin-top: 16px;
+    /* Scrollbalk boven de tabel */
+    .table-scroll-outer {
+      margin-top: 12px;
+    }
+
+    .table-scroll-top {
       overflow-x: auto;
-      border-radius: 12px;
-      border: 1px solid #e0e0e0;
+      overflow-y: hidden;
+      height: 12px;
+      margin-bottom: 4px;
+    }
+
+    .table-scroll-top::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .table-scroll-top::-webkit-scrollbar-thumb {
+      background: #93c5fd;
+      border-radius: 999px;
+    }
+
+    .table-scroll-top::-webkit-scrollbar-track {
+      background: #e5e7eb;
+      border-radius: 999px;
+    }
+
+    .table-scroll-inner {
+      height: 1px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: #93c5fd;
+      border-radius: 999px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #e5e7eb;
+      border-radius: 999px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 12px;
       background: #fff;
+      table-layout: auto;
+      min-width: 900px;
     }
 
     thead {
-      background: #fafafa;
+      background: linear-gradient(90deg, #0b3954, #1f4f9a);
+      color: #e5efff;
     }
 
     th, td {
-      padding: 8px 10px;
+      padding: 6px 8px;
       text-align: left;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid #e5e7eb;
       vertical-align: top;
+      white-space: nowrap;
     }
 
     th {
@@ -121,7 +197,7 @@
       cursor: pointer;
       user-select: none;
       font-weight: 600;
-      white-space: nowrap;
+      font-size: 12px;
     }
 
     th.sorted-asc::after,
@@ -135,28 +211,37 @@
     }
 
     th.sorted-asc::after {
-      border-bottom-color: #333;
+      border-bottom-color: #bfdbfe;
       margin-top: -3px;
     }
 
     th.sorted-desc::after {
-      border-top-color: #333;
+      border-top-color: #bfdbfe;
       margin-top: 3px;
     }
 
     tbody tr:nth-child(even) {
-      background: #fafafa;
+      background: #f9fafb;
     }
 
     tbody tr:hover {
-      background: #f0f7ff;
+      background: #e0ecff;
+    }
+
+    tbody td {
+      font-size: 12px;
+      color: #111827;
     }
 
     .legend {
-      font-size: 12px;
-      color: #666;
+      font-size: 11px;
+      color: #4b5563;
       margin-top: 12px;
       line-height: 1.4;
+    }
+
+    .legend strong {
+      color: #111827;
     }
 
     @media (max-width: 768px) {
@@ -165,7 +250,7 @@
         padding: 16px;
       }
       th, td {
-        padding: 6px 8px;
+        padding: 5px 6px;
       }
       .controls {
         align-items: flex-start;
@@ -174,12 +259,15 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <header class="page-header">
     <h1>ABC-analyse Shopify</h1>
+    <p>Upload je maandelijkse Excel-export, filter op producttype en krijg direct inzicht in A/B/C-artikelen.</p>
+  </header>
+
+  <div class="container">
     <p class="subtitle">
-      Upload een Excel-export met maand-sheets. De tool maakt automatisch een ABC-analyse over alle SKU’s,
-      met optie om per producttype te filteren. Als je een producttype filtert, worden zowel de omzet als de
-      ABC-indeling alléén binnen dat producttype berekend.
+      De applicatie maakt automatisch een ABC-analyse over alle SKU’s. Als je een producttype filtert,
+      worden zowel de omzet als de ABC-indeling alléén binnen dat producttype berekend.
     </p>
 
     <div class="controls">
@@ -209,26 +297,33 @@
       <span id="monthsInfo"></span>
     </div>
 
-    <div class="table-wrapper">
-      <table id="resultsTable">
-        <thead>
-          <tr>
-            <th data-column="productTitle" data-type="text">Productnaam</th>
-            <th data-column="sku" data-type="text">SKU</th>
-            <th data-column="productType" data-type="text">Producttype</th>
-            <th data-column="totalUnits" data-type="number">Totaal aantal verkopen</th>
-            <th data-column="avgUnitsPerMonth" data-type="number">Gem. verkopen per maand</th>
-            <th data-column="daysOfStock" data-type="number">Verwachte dagen voorraad</th>
-            <th data-column="avgAbcScore" data-type="number">Gem. ABC-score (1=A)</th>
-            <th data-column="abcTimeline" data-type="text">ABC-beloop over maanden</th>
-          </tr>
-        </thead>
-        <tbody id="resultsBody">
-          <tr>
-            <td colspan="8">Upload een Excel-bestand om de analyse te starten.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="table-scroll-outer">
+      <div id="tableScrollTop" class="table-scroll-top">
+        <div class="table-scroll-inner"></div>
+      </div>
+
+      <div class="table-wrapper" id="tableWrapper">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th data-column="productTitle" data-type="text">Productnaam</th>
+              <th data-column="sku" data-type="text">SKU</th>
+              <th data-column="productType" data-type="text">Producttype</th>
+              <th data-column="totalUnits" data-type="number">Totaal verkopen</th>
+              <th data-column="avgUnitsPerMonth" data-type="number">Gem. verkopen / maand</th>
+              <th data-column="daysOfStock" data-type="number">Verwachte dagen voorraad</th>
+              <th data-column="stockAvailable" data-type="text">Voorraad aanwezig</th>
+              <th data-column="avgAbcScore" data-type="number">Gem. ABC-score (1=A)</th>
+              <th data-column="abcTimeline" data-type="text">ABC-beloop over maanden</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody">
+            <tr>
+              <td colspan="9">Upload een Excel-bestand om de analyse te starten.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <p class="legend">
@@ -239,7 +334,8 @@
       C = laatste 5% van de omzet.<br />
       Het ABC-beloop toont de classificatie per maand in chronologische volgorde (bijv. <code>AABBC</code>).<br />
       Een <code>-</code> betekent dat de SKU die maand niet is meegenomen in de ABC-analyse
-      (bijvoorbeeld omdat de startvoorraad 0 was).
+      (bijvoorbeeld omdat de startvoorraad 0 was).<br />
+      <strong>Voorraad aanwezig:</strong> Ja = eindvoorraad meest recente maand &gt; 0, Nee = eindvoorraad meest recente maand = 0.
     </p>
   </div>
 
@@ -263,6 +359,9 @@
       const resultsTableEl = document.getElementById('resultsTable');
       const filtersEl = document.getElementById('filters');
       const statusMessageEl = document.getElementById('statusMessage');
+      const tableWrapperEl = document.getElementById('tableWrapper');
+      const tableScrollTopEl = document.getElementById('tableScrollTop');
+      const tableScrollInnerEl = tableScrollTopEl.querySelector('.table-scroll-inner');
 
       function setStatus(message) {
         statusMessageEl.textContent = message || '';
@@ -577,6 +676,8 @@
             daysOfStock = (latestEndingInv / avgUnitsPerMonth) * 30; // ~30 dagen per maand
           }
 
+          const stockAvailable = latestEndingInv != null && latestEndingInv > 0 ? 'Ja' : 'Nee';
+
           const abcLetters = [];
           const scores = [];
           monthKeys.forEach(key => {
@@ -604,12 +705,18 @@
             totalUnits: info.totalUnits,
             avgUnitsPerMonth,
             daysOfStock,
+            stockAvailable,
             avgAbcScore,
             abcTimeline: abcLetters.join('')
           });
         });
 
         return rows;
+      }
+
+      function syncTopScrollWidth() {
+        if (!resultsTableEl || !tableScrollInnerEl) return;
+        tableScrollInnerEl.style.width = resultsTableEl.scrollWidth + 'px';
       }
 
       function updateTable() {
@@ -637,7 +744,13 @@
           if (va == null) return 1;
           if (vb == null) return -1;
 
-          if (col === 'productTitle' || col === 'sku' || col === 'productType' || col === 'abcTimeline') {
+          if (
+            col === 'productTitle' ||
+            col === 'sku' ||
+            col === 'productType' ||
+            col === 'abcTimeline' ||
+            col === 'stockAvailable'
+          ) {
             return String(va).localeCompare(String(vb), 'nl-NL') * dir;
           } else {
             const na = Number(va);
@@ -654,10 +767,11 @@
         if (rows.length === 0) {
           const tr = document.createElement('tr');
           const td = document.createElement('td');
-          td.colSpan = 8;
+          td.colSpan = 9;
           td.textContent = 'Geen resultaten voor de huidige filters.';
           tr.appendChild(td);
           tbody.appendChild(tr);
+          syncTopScrollWidth();
           return;
         }
 
@@ -688,6 +802,10 @@
           tdDays.textContent = r.daysOfStock != null ? formatNumber(r.daysOfStock, 1) : '—';
           tr.appendChild(tdDays);
 
+          const tdStock = document.createElement('td');
+          tdStock.textContent = r.stockAvailable || 'Nee';
+          tr.appendChild(tdStock);
+
           const tdScore = document.createElement('td');
           tdScore.textContent = r.avgAbcScore != null ? formatNumber(r.avgAbcScore, 2) : '—';
           tr.appendChild(tdScore);
@@ -698,6 +816,8 @@
 
           tbody.appendChild(tr);
         });
+
+        syncTopScrollWidth();
       }
 
       // events
@@ -733,6 +853,7 @@
         updateTable();
       });
 
+      // Sorteren bij klikken op table headers
       const headerCells = resultsTableEl.querySelectorAll('thead th');
       headerCells.forEach(th => {
         th.addEventListener('click', function () {
@@ -753,6 +874,31 @@
           updateTable();
         });
       });
+
+      // Scroll synchroniseren tussen bovenste en onderste scrollbar
+      let isSyncingTop = false;
+      let isSyncingBottom = false;
+
+      tableScrollTopEl.addEventListener('scroll', function () {
+        if (isSyncingTop) return;
+        isSyncingBottom = true;
+        tableWrapperEl.scrollLeft = tableScrollTopEl.scrollLeft;
+        isSyncingBottom = false;
+      });
+
+      tableWrapperEl.addEventListener('scroll', function () {
+        if (isSyncingBottom) return;
+        isSyncingTop = true;
+        tableScrollTopEl.scrollLeft = tableWrapperEl.scrollLeft;
+        isSyncingTop = false;
+      });
+
+      window.addEventListener('resize', function () {
+        syncTopScrollWidth();
+      });
+
+      // initial width
+      syncTopScrollWidth();
     });
   </script>
 </body>
